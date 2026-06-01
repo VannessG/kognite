@@ -17,6 +17,8 @@ class FirebaseManager {
     
     private init() {}
     
+    // MARK: - Auth
+    
     func login(email: String, pass: String) async throws {
         try await auth.signIn(withEmail: email, password: pass)
     }
@@ -52,6 +54,8 @@ class FirebaseManager {
         try await user.reauthenticate(with: credential)
     }
     
+    // MARK: - Users & Stats
+    
     func fetchUserStats(userId: String) async throws -> (streak: Int, totalTasks: Int, lastActiveDate: String?) {
         let snapshot = try await db.collection("users").document(userId).getDocument()
         guard let data = snapshot.data() else { return (0, 0, nil) }
@@ -59,15 +63,17 @@ class FirebaseManager {
         let streak = data["currentStreak"] as? Int ?? 0
         let totalTasks = data["totalCompletedTasks"] as? Int ?? 0
         
+        // Mengambil data langsung dari Firebase tanpa memerlukan struct User
         let lastActiveDate = data["lastActiveDate"] as? String
         
         return (streak, totalTasks, lastActiveDate)
     }
     
+    // TAMBAHAN: Fungsi baru untuk menyimpan streak dan tanggal hari ini
     func updateUserStreakAndDate(userId: String, newStreak: Int, dateStr: String) async throws {
         try await db.collection("users").document(userId).updateData([
             "currentStreak": newStreak,
-            "lastActiveDate": dateStr
+            "lastActiveDate": dateStr // Firebase otomatis membuat kolom ini di DB!
         ])
     }
     
@@ -75,6 +81,8 @@ class FirebaseManager {
         let snapshot = try await db.collection("users").document(userId).getDocument()
         return try snapshot.data(as: User.self)
     }
+    
+    // MARK: - Tasks Management
     
     func fetchTasks(scheduleId: String) async throws -> [kognite.Task] {
         let snapshot = try await db.collection("tasks").whereField("scheduleId", isEqualTo: scheduleId).getDocuments()
@@ -107,6 +115,8 @@ class FirebaseManager {
         ])
     }
     
+    // MARK: - Activities Management
+    
     func fetchActivities(scheduleId: String) async throws -> [ScheduleActivity] {
         let snapshot = try await db.collection("activities").whereField("scheduleId", isEqualTo: scheduleId).getDocuments()
         return snapshot.documents.compactMap { try? $0.data(as: ScheduleActivity.self) }
@@ -125,5 +135,16 @@ class FirebaseManager {
     func deleteActivity(id: String) async throws {
         try await db.collection("activities").document(id).delete()
     }
-
+    
+    // MARK: - Rewards Management
+    
+    func fetchRewards(userId: String) async throws -> [Reward] {
+        let snapshot = try await db.collection("rewards").whereField("userId", isEqualTo: userId).getDocuments()
+        return snapshot.documents.compactMap { try? $0.data(as: Reward.self) }
+    }
+    
+    func saveReward(_ reward: Reward, userId: String) throws {
+        guard let id = reward.id else { return }
+        try db.collection("rewards").document(id).setData(from: reward)
+    }
 }
