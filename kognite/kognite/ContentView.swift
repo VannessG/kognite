@@ -8,18 +8,24 @@
 import SwiftUI
 
 struct ContentView: View {
+    @StateObject var authViewModel = AuthViewModel()
+    
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        Group {
+            if authViewModel.isAuthenticated {
+                // Mengarahkan ke TabView Utama ketika berhasil Login
+                MainTabView(authViewModel: authViewModel)
+            } else {
+                LoginScreen(viewModel: authViewModel)
+            }
         }
-        .padding()
+        .onAppear {
+            // PERBAIKAN: Menyerahkan tugas cek sesi ke ViewModel
+            authViewModel.checkExistingSession()
+        }
     }
 }
 
 #Preview {
     ContentView()
 }
-
