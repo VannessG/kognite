@@ -75,4 +75,55 @@ class FirebaseManager {
         let snapshot = try await db.collection("users").document(userId).getDocument()
         return try snapshot.data(as: User.self)
     }
+    
+    func fetchTasks(scheduleId: String) async throws -> [kognite.Task] {
+        let snapshot = try await db.collection("tasks").whereField("scheduleId", isEqualTo: scheduleId).getDocuments()
+        return snapshot.documents.compactMap { try? $0.data(as: kognite.Task.self) }
+    }
+    
+    func addTask(_ task: kognite.Task) throws {
+        guard let id = task.id else { return }
+        try db.collection("tasks").document(id).setData(from: task)
+    }
+    
+    func updateTask(_ task: kognite.Task) throws {
+        guard let id = task.id else { return }
+        try db.collection("tasks").document(id).setData(from: task)
+    }
+    
+    func deleteTask(id: String) async throws {
+        try await db.collection("tasks").document(id).delete()
+    }
+    
+    func incrementUserTaskCount(userId: String) async throws {
+        try await db.collection("users").document(userId).updateData([
+            "totalCompletedTasks": FieldValue.increment(Int64(1))
+        ])
+    }
+    
+    func decrementUserTaskCount(userId: String) async throws {
+        try await db.collection("users").document(userId).updateData([
+            "totalCompletedTasks": FieldValue.increment(Int64(-1))
+        ])
+    }
+    
+    func fetchActivities(scheduleId: String) async throws -> [ScheduleActivity] {
+        let snapshot = try await db.collection("activities").whereField("scheduleId", isEqualTo: scheduleId).getDocuments()
+        return snapshot.documents.compactMap { try? $0.data(as: ScheduleActivity.self) }
+    }
+    
+    func addActivity(_ activity: ScheduleActivity) throws {
+        guard let id = activity.id else { return }
+        try db.collection("activities").document(id).setData(from: activity)
+    }
+    
+    func updateActivity(_ activity: ScheduleActivity) throws {
+        guard let id = activity.id else { return }
+        try db.collection("activities").document(id).setData(from: activity)
+    }
+    
+    func deleteActivity(id: String) async throws {
+        try await db.collection("activities").document(id).delete()
+    }
+
 }
