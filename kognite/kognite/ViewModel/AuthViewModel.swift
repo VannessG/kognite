@@ -76,4 +76,12 @@ class AuthViewModel: ObservableObject {
             print("Gagal logout: \(error.localizedDescription)")
         }
     }
+    
+    func checkExistingSession() {
+        if FirebaseManager.shared.getCurrentUserId() != nil {
+            self.isAuthenticated = true
+        } else {
+            self.isAuthenticated = false
+        }
+    }
 }

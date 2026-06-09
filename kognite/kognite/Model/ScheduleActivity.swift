@@ -1,8 +1,8 @@
 //
 //  ScheduleActivity.swift
-//  kognite-se
+//  kognite
 //
-//  Created by Vanness Aurelius Gunawan on 12/05/26.
+//  Created by Lemuel on 01/06/26.
 //
 
 import Foundation

@@ -1,8 +1,8 @@
 //
 //  ActivityListViewModel.swift
-//  kognite-se
+//  kognite
 //
-//  Created by Vanness Aurelius Gunawan on 12/05/26.
+//  Created by Lemuel on 01/06/26.
 //
 
 import Foundation
@@ -24,8 +24,6 @@ class ActivityListViewModel: ObservableObject {
     init() {
         self.scheduleId = FirebaseManager.shared.getCurrentUserId() ?? "default_user"
     }
-
-    // MARK: - Read
 
     func loadActivities() {
         Swift.Task {
@@ -60,8 +58,6 @@ class ActivityListViewModel: ObservableObject {
         }
     }
 
-    // MARK: - Write
-
     func addActivity(icon: String, title: String, start: String, end: String, desc: String) {
         let newId = UUID().uuidString
         let newActivity = ScheduleActivity(
@@ -75,7 +71,6 @@ class ActivityListViewModel: ObservableObject {
         
         Swift.Task {
             do {
-                // PERBAIKAN: Hapus 'await', cukup gunakan 'try'
                 try FirebaseManager.shared.addActivity(newActivity)
             } catch {
                 self.loadActivities()
@@ -96,7 +91,6 @@ class ActivityListViewModel: ObservableObject {
 
         Swift.Task {
             do {
-                // PERBAIKAN: Hapus 'await', cukup gunakan 'try'
                 try FirebaseManager.shared.updateActivity(updated)
             } catch {
                 self.loadActivities()
@@ -105,19 +99,17 @@ class ActivityListViewModel: ObservableObject {
     }
 
     func deleteActivity(id: String) {
-        // Hapus dari UI langsung agar responsif
         self.activities.removeAll(where: { $0.id == id })
         
         Swift.Task {
             do {
                 try await FirebaseManager.shared.deleteActivity(id: id)
             } catch {
-                self.loadActivities() // Rollback
+                self.loadActivities()
             }
         }
     }
 
-    // MARK: - Validation
 
     func validateActivityTime(start: String, end: String, excludeId: String? = nil) -> (Bool, String?) {
         let startMin = timeToMinutes(start)
@@ -138,7 +130,6 @@ class ActivityListViewModel: ObservableObject {
         return (true, nil)
     }
 
-    // MARK: - Helpers
     private func timeToMinutes(_ time: String) -> Int {
         let parts = time.split(separator: ":").compactMap { Int($0) }
         guard parts.count == 2 else { return 0 }

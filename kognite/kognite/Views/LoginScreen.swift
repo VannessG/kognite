@@ -54,7 +54,7 @@ struct LoginScreen: View {
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color(red: 0.35, green: 0.65, blue: 0.45)) // Primary Green
+                        .background(Color(red: 0.35, green: 0.65, blue: 0.45))
                         .cornerRadius(12)
                 }
                 .padding(.horizontal, 20)
@@ -72,7 +72,6 @@ struct LoginScreen: View {
                 Spacer()
             }
             .background(Color(red: 0.96, green: 0.96, blue: 0.96).edgesIgnoringSafeArea(.all))
-            // Tampilkan alert jika ada error
             .alert(isPresented: $viewModel.showError) {
                 Alert(title: Text("Peringatan"), message: Text(viewModel.errorMessage), dismissButton: .default(Text("OK")))
             }

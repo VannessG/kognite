@@ -21,10 +21,8 @@ struct ContentView: View {
             }
         }
         .onAppear {
-            // Cek sesi Firebase saat aplikasi baru dibuka
-            if Auth.auth().currentUser != nil {
-                authViewModel.isAuthenticated = true
-            }
+            // PERBAIKAN: Menyerahkan tugas cek sesi ke ViewModel
+            authViewModel.checkExistingSession()
         }
     }
 }
@@ -32,4 +30,3 @@ struct ContentView: View {
 #Preview {
     ContentView()
 }
-

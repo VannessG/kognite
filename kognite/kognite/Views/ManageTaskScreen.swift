@@ -1,20 +1,18 @@
 //
 //  ManageTaskScreen.swift
-//  kognite-se
+//  kognite
 //
-//  Created by Vanness Aurelius Gunawan on 12/05/26.
+//  Created by Lemuel on 01/06/26.
 //
 
 import SwiftUI
 
-// Menentukan aksi yang tertunda setelah verifikasi password
 enum TaskAction {
     case delete
     case edit
 }
 
 struct ManageTaskScreen: View {
-    // Menerima instance viewModel yang sama dari Dashboard
     @ObservedObject var viewModel: DashboardViewModel
 
     @State private var showingAddTask = false
@@ -22,11 +20,9 @@ struct ManageTaskScreen: View {
     @State private var newTaskDesc = ""
     @State private var newTaskDeadline = Date()
 
-    // States untuk Peringatan 'Done'
     @State private var showCompletionWarning = false
     @State private var taskToComplete: kognite.Task?
 
-    // States untuk Keamanan (Edit & Delete)
     @State private var showPasswordPrompt = false
     @State private var enteredPassword = ""
     @State private var showAuthError = false
@@ -35,7 +31,6 @@ struct ManageTaskScreen: View {
     @State private var taskToModify: kognite.Task?
     @State private var pendingAction: TaskAction = .delete
 
-    // States untuk Form Edit
     @State private var showingEditTask = false
     @State private var editTaskTitle = ""
     @State private var editTaskDesc = ""
@@ -43,12 +38,9 @@ struct ManageTaskScreen: View {
 
     var body: some View {
         ZStack {
-            // --- KONTEN UTAMA (YANG AKAN DI-BLUR) ---
             ZStack {
-                // 1. Background
                 Color(red: 0.96, green: 0.96, blue: 0.96).edgesIgnoringSafeArea(.all)
 
-                // 2. Konten Utama
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
                         incompleteSection
@@ -58,7 +50,6 @@ struct ManageTaskScreen: View {
                     .padding(.bottom, 80)
                 }
 
-                // 3. Floating Add Button
                 VStack {
                     Spacer()
                     HStack {
@@ -80,12 +71,8 @@ struct ManageTaskScreen: View {
                     }
                 }
             }
-            // MODIFIER BLUR DIPINDAH KESINI (Hanya berlaku untuk konten di atas)
             .blur(radius: showingAddTask || showingEditTask ? 5 : 0)
             
-            // --- LAPISAN POP UP (TIDAK TERKENA BLUR) ---
-            
-            // 4. Lapisan Gelap Pembatas
             if showingAddTask || showingEditTask {
                 Color.black.opacity(0.3)
                     .edgesIgnoringSafeArea(.all)
@@ -96,15 +83,12 @@ struct ManageTaskScreen: View {
                         }
                     }
             }
-            
-            // 5. Form Pop Up
             if showingAddTask { addTaskPopUp }
             if showingEditTask { editTaskPopUp }
         }
         .navigationTitle("Manage Tasks")
         .navigationBarTitleDisplayMode(.inline)
         
-        // Alert Peringatan Penyelesaian Task
         .alert("Konfirmasi Penyelesaian", isPresented: $showCompletionWarning) {
             Button("Batal", role: .cancel) { taskToComplete = nil }
             Button("Yakin") {
@@ -117,7 +101,6 @@ struct ManageTaskScreen: View {
             Text("Apakah anda yakin sudah menyelesaikan tugas ini?")
         }
         
-        // Alert Meminta Password untuk Edit/Delete
         .alert("Parental Lock", isPresented: $showPasswordPrompt) {
             SecureField("Masukkan Password Akun", text: $enteredPassword)
             Button("Batal", role: .cancel) {
@@ -131,7 +114,6 @@ struct ManageTaskScreen: View {
             Text("Masukkan password akun Anda untuk melanjutkan aksi ini.")
         }
         
-        // Alert Jika Password Salah
         .alert("Verifikasi Gagal", isPresented: $showAuthError) {
             Button("OK", role: .cancel) { }
         } message: {
@@ -173,7 +155,6 @@ struct ManageTaskScreen: View {
         }
     }
 
-    // Desain Row
     private func taskRow(task: kognite.Task) -> some View {
         HStack {
             Rectangle()
@@ -198,7 +179,6 @@ struct ManageTaskScreen: View {
             }
             Spacer()
             
-            // Tombol Done (Memicu Peringatan)
             if !task.isCompleted {
                 Button(action: {
                     taskToComplete = task
@@ -215,12 +195,11 @@ struct ManageTaskScreen: View {
                     .font(.title2)
             }
         
-            // Tombol Edit (Langsung Buka Form)
             if !task.isCompleted {
                 Button(action: {
                     taskToModify = task
-                    prepareEditSheet() // Siapkan data ke dalam form
-                    withAnimation { showingEditTask = true } // Langsung tampilkan form
+                    prepareEditSheet()
+                    withAnimation { showingEditTask = true }
                 }) {
                     Image(systemName: "pencil")
                         .foregroundColor(.blue)
@@ -229,7 +208,6 @@ struct ManageTaskScreen: View {
                 .buttonStyle(BorderlessButtonStyle())
             }
             
-            // Tombol Delete (Memicu Password)
             Button(action: {
                 taskToModify = task
                 pendingAction = .delete
@@ -259,12 +237,10 @@ struct ManageTaskScreen: View {
                             self.viewModel.deleteTask(id: id)
                         }
                     } else if self.pendingAction == .edit {
-                        // LOGIKA SIMPAN DI SINI
                         if let task = self.taskToModify {
                             let formatter = DateFormatter()
                             formatter.dateFormat = "dd MMM yyyy, HH:mm"
                             
-                            // Memanggil updateTask ke ViewModel
                             self.viewModel.updateTask(
                                 id: task.id ?? "",
                                 title: self.editTaskTitle,
@@ -272,7 +248,6 @@ struct ManageTaskScreen: View {
                                 description: self.editTaskDesc
                             )
                         }
-                        // Menutup form edit setelah password benar & data terupdate
                         self.showingEditTask = false
                     }
                     self.taskToModify = nil
@@ -284,7 +259,6 @@ struct ManageTaskScreen: View {
         }
     }
     
-    // Mengisi form edit dengan data dari task yang dipilih
     private func prepareEditSheet() {
         guard let task = taskToModify else { return }
         editTaskTitle = task.title
@@ -298,12 +272,9 @@ struct ManageTaskScreen: View {
             editTaskDeadline = Date()
         }
     }
-
-    // MARK: - Custom Pop-Ups
     
     private var addTaskPopUp: some View {
         ZStack {
-            // Hapus background hitam opacity 0.4 di sini, karena sudah ada di luar (di lapisan 4)
             
             VStack(spacing: 25) {
                 Text("New Task").font(.title2).bold()
@@ -357,7 +328,6 @@ struct ManageTaskScreen: View {
     
     private var editTaskPopUp: some View {
         ZStack {
-            // Hapus background hitam opacity 0.4 di sini juga
             
             VStack(spacing: 25) {
                 Text("Edit Task Info").font(.title2).bold()
@@ -386,9 +356,7 @@ struct ManageTaskScreen: View {
                     }
                     
                     Button(action: {
-                        // 1. Set action ke .edit
                         pendingAction = .edit
-                        // 2. Minta password lagi
                         showPasswordPrompt = true
                     }) {
                         Text("Save")

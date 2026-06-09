@@ -20,7 +20,6 @@ struct LottieView: UIViewRepresentable {
             animationView.animation = animation
         }
         
-        // Ganti ke .scaleAspectFit agar seluruh objek animasi masuk ke dalam frame
         animationView.contentMode = .scaleAspectFit
         animationView.loopMode = loopMode
         

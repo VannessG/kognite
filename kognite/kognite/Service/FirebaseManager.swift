@@ -73,7 +73,7 @@ class FirebaseManager {
     func updateUserStreakAndDate(userId: String, newStreak: Int, dateStr: String) async throws {
         try await db.collection("users").document(userId).updateData([
             "currentStreak": newStreak,
-            "lastActiveDate": dateStr
+            "lastActiveDate": dateStr // Firebase otomatis membuat kolom ini di DB!
         ])
     }
     

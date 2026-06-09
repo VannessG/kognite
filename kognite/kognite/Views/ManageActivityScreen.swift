@@ -1,8 +1,8 @@
 //
 //  ManageActivityScreen.swift
-//  kognite-se
+//  kognite
 //
-//  Created by Vanness Aurelius Gunawan on 12/05/26.
+//  Created by Lemuel on 01/06/26.
 //
 
 import SwiftUI
@@ -10,10 +10,8 @@ import SwiftUI
 struct ManageActivityScreen: View {
     @ObservedObject var viewModel: ActivityListViewModel
     
-    // State untuk mengelola Edit
     @State private var activityToEdit: ScheduleActivity?
     
-    // State untuk mengelola Alert Delete
     @State private var showingDeleteAlert = false
     @State private var activityToDelete: ScheduleActivity?
 
@@ -55,7 +53,6 @@ struct ManageActivityScreen: View {
                             }
                             Spacer()
                             
-                            // Edit Button
                             Button(action: {
                                 activityToEdit = activity
                             }) {
@@ -65,9 +62,7 @@ struct ManageActivityScreen: View {
                             .buttonStyle(BorderlessButtonStyle())
                             .padding(.trailing, 8)
                             
-                            // Delete Button
                             Button(action: {
-                                // PERUBAHAN: Set state alert alih-alih langsung menghapus
                                 activityToDelete = activity
                                 showingDeleteAlert = true
                             }) {
@@ -87,7 +82,6 @@ struct ManageActivityScreen: View {
         .sheet(item: $activityToEdit) { activity in
             EditActivitySheet(viewModel: viewModel, activity: activity)
         }
-        // TAMBAHAN: Alert Konfirmasi Delete
         .alert("Konfirmasi Hapus", isPresented: $showingDeleteAlert) {
             Button("Batal", role: .cancel) {
                 activityToDelete = nil
@@ -104,7 +98,6 @@ struct ManageActivityScreen: View {
     }
 }
 
-// MARK: - Edit Activity Sheet
 struct EditActivitySheet: View {
     @Environment(\.presentationMode) var presentationMode
     @ObservedObject var viewModel: ActivityListViewModel
@@ -120,13 +113,11 @@ struct EditActivitySheet: View {
         self.viewModel = viewModel
         self.activity = activity
         
-        // Inisialisasi state awal dengan data aktivitas yang dipilih
         _desc = State(initialValue: activity.description)
         
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm"
         
-        // Convert string waktu (misal "08:00") ke tipe Date agar bisa dipakai di DatePicker
         _startTime = State(initialValue: formatter.date(from: activity.startTime) ?? Date())
         _endTime = State(initialValue: formatter.date(from: activity.endTime) ?? Date())
     }
@@ -168,11 +159,9 @@ struct EditActivitySheet: View {
         let startStr = formatter.string(from: startTime)
         let endStr = formatter.string(from: endTime)
         
-        // Validasi waktu menggunakan logic di ViewModel, tapi mengecualikan ID aktivitas ini sendiri agar tidak dianggap bertabrakan dengan jadwalnya sendiri
         let (isValid, errorMsg) = viewModel.validateActivityTime(start: startStr, end: endStr, excludeId: activity.id)
         
         if isValid {
-            // Update & tutup sheet jika tervalidasi sukses
             viewModel.updateActivity(activity, start: startStr, end: endStr, desc: desc)
             presentationMode.wrappedValue.dismiss()
         } else {

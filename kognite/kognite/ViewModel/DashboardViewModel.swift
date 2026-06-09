@@ -1,8 +1,8 @@
 //
 //  DashboardViewModel.swift
-//  kognite-se
+//  kognite
 //
-//  Created by Vanness Aurelius Gunawan on 12/05/26.
+//  Created by Lemuel on 01/06/26.
 //
 
 import Foundation
@@ -31,7 +31,6 @@ class DashboardViewModel: ObservableObject {
                 try await FirebaseManager.shared.reauthenticateUser(password: password)
                 completion(true, "Berhasil")
             } catch let error as NSError {
-                // Menangkap pesan error agar lebih informatif
                 let msg = error.code == AuthErrorCode.wrongPassword.rawValue ? "Password salah." : error.localizedDescription
                 completion(false, msg)
             }
@@ -60,13 +59,12 @@ class DashboardViewModel: ObservableObject {
             deadline: deadline, description: description.isEmpty ? nil : description, isCompleted: false, color: color
         )
         
-        // Optimistic update
         self.tasks.append(newTask)
         
         do {
             try FirebaseManager.shared.addTask(newTask)
         } catch {
-            self.tasks.removeAll(where: { $0.id == newId }) // Rollback
+            self.tasks.removeAll(where: { $0.id == newId })
         }
     }
 
@@ -77,12 +75,12 @@ class DashboardViewModel: ObservableObject {
         updatedTask.deadline = deadline
         updatedTask.description = description.isEmpty ? nil : description
         
-        tasks[index] = updatedTask // Optimistic Update
+        tasks[index] = updatedTask
         
         do {
             try FirebaseManager.shared.updateTask(updatedTask)
         } catch {
-            self.loadDashboardData() // Rollback jika gagal
+            self.loadDashboardData()
         }
     }
     
@@ -90,55 +88,46 @@ class DashboardViewModel: ObservableObject {
         guard let index = tasks.firstIndex(where: { $0.id == task.id }) else { return }
         var updated = tasks[index]
         updated.isCompleted = true
-        tasks[index] = updated // Optimistic update
+        tasks[index] = updated
 
         Swift.Task {
             do {
-                // 1. Simpan status task menjadi done
                 try FirebaseManager.shared.updateTask(updated)
                 
-                // 2. Tambah total tugas yang sudah diselesaikan
                 try await FirebaseManager.shared.incrementUserTaskCount(userId: scheduleId)
                 
-                // 3. JALANKAN LOGIKA STREAK
                 try await processStreakUpdate()
                 
             } catch {
-                self.loadDashboardData() // Rollback jika gagal
+                self.loadDashboardData()
                 print("Gagal menyelesaikan task: \(error.localizedDescription)")
             }
         }
     }
     
-    // MARK: - Logika Perhitungan Streak
     private func processStreakUpdate() async throws {
-        // Ambil data stats terbaru dari Firebase
         let stats = try await FirebaseManager.shared.fetchUserStats(userId: scheduleId)
         
         let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd" // Format standar tanggal
+        formatter.dateFormat = "yyyy-MM-dd"
         
         let todayStr = formatter.string(from: Date())
         
-        // Cari tahu tanggal kemarin
         let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
         let yesterdayStr = formatter.string(from: yesterday)
         
         let lastActive = stats.lastActiveDate
         
-        // SKENARIO 1: User sudah menyelesaikan task lain hari ini. (Streak aman, tidak perlu ditambah lagi)
         if lastActive == todayStr {
             return
         }
         
-        var newStreak = 1 // SKENARIO 2: Default (Baru pertama kali, atau bolong/reset)
+        var newStreak = 1
         
-        // SKENARIO 3: User terakhir mengerjakan task kemarin (Streak berlanjut +1)
         if lastActive == yesterdayStr {
             newStreak = stats.streak + 1
         }
         
-        // Simpan streak baru dan perbarui lastActiveDate menjadi hari ini
         try await FirebaseManager.shared.updateUserStreakAndDate(
             userId: scheduleId,
             newStreak: newStreak,
@@ -159,7 +148,7 @@ class DashboardViewModel: ObservableObject {
                     try await FirebaseManager.shared.decrementUserTaskCount(userId: scheduleId)
                 }
             } catch {
-                self.loadDashboardData() // Rollback jika ada yang gagal
+                self.loadDashboardData()
                 print("Gagal menghapus task: \(error.localizedDescription)")
             }
         }

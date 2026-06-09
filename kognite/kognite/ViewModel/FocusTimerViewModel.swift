@@ -146,7 +146,6 @@ class FocusTimerViewModel: ObservableObject {
         }
     }
     
-    // Panggil async throws melalui Task, lalu lempar balik completion boolean untuk View
     func verifyPassword(password: String, completion: @escaping (Bool) -> Void) {
         Swift.Task {
             do {

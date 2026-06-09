@@ -1,13 +1,12 @@
 //
 //  DashboardScreen.swift
-//  kognite-se
+//  kognite
 //
-//  Created by Vanness Aurelius Gunawan on 12/05/26.
+//  Created by Lemuel on 01/06/26.
 //
 
 import SwiftUI
 
-// Menampilkan rangkuman jadwal harian dan progres penyelesaian tugas pengguna
 struct DashboardScreen: View {
     @StateObject var viewModel = DashboardViewModel()
     @StateObject var activityVM = ActivityListViewModel()
@@ -30,12 +29,10 @@ struct DashboardScreen: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 25) {
                     
-                    // Welcome Header
                     VStack(alignment: .leading, spacing: 5) {
                         Text("Welcome Back,")
                             .font(.title2)
                             .foregroundColor(.gray)
-                        // Menggunakan ViewModel untuk mengambil nama
                         Text(viewModel.currentUserDisplayName.capitalized)
                             .font(.largeTitle)
                             .fontWeight(.bold)
@@ -43,7 +40,6 @@ struct DashboardScreen: View {
                     .padding(.horizontal)
                     .padding(.top, 10)
                     
-                    // Progress Section
                     VStack(alignment: .leading, spacing: 8) {
                         let currentProgress = viewModel.calculateProgress()
                         let progressPercentage = Int(currentProgress * 100)
@@ -78,7 +74,6 @@ struct DashboardScreen: View {
                     }
                     .padding(.horizontal)
                     
-                    // Next on Schedule Card
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
                             Image(systemName: activityVM.getNextActivity()?.iconName ?? "calendar")
@@ -122,7 +117,6 @@ struct DashboardScreen: View {
                     .cornerRadius(20)
                     .padding(.horizontal)
                     
-                    // Activities Section
                     VStack {
                         HStack {
                             Text("Activities")
@@ -148,7 +142,6 @@ struct DashboardScreen: View {
                         }
                     }
                     
-                    // Upcoming Deadlines Section
                     VStack(alignment: .leading) {
                         HStack {
                             Text("Upcoming Deadlines")
@@ -221,7 +214,6 @@ struct DashboardScreen: View {
                 )
             }
             
-            // FORM POPUP ADD ACTIVITY
             .sheet(isPresented: $showingAddActivity) {
                 VStack(spacing: 20) {
                     Text("Add Activity").font(.title2).fontWeight(.bold).frame(maxWidth: .infinity, alignment: .leading)

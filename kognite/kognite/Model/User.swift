@@ -8,7 +8,7 @@
 import Foundation
 import FirebaseFirestore
 
-// Merepresentasikan entitas profil pengguna untuk menyimpan identitas dasar dan akumulasi statistik produktivitas secara persisten
+// Merepresentasikan entitas profil pengguna untuk menyimpan identitas dasar dan akumulasi statistik produktivitas
 struct User: Identifiable, Codable {
     @DocumentID var id: String?
     var username: String
