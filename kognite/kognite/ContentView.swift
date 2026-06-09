@@ -6,16 +6,26 @@
 //
 
 import SwiftUI
+import FirebaseAuth
 
 struct ContentView: View {
+    @StateObject var authViewModel = AuthViewModel()
+    
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        Group {
+            if authViewModel.isAuthenticated {
+                // Mengarahkan ke TabView Utama ketika berhasil Login
+                MainTabView(authViewModel: authViewModel)
+            } else {
+                LoginScreen(viewModel: authViewModel)
+            }
         }
-        .padding()
+        .onAppear {
+            // Cek sesi Firebase saat aplikasi baru dibuka
+            if Auth.auth().currentUser != nil {
+                authViewModel.isAuthenticated = true
+            }
+        }
     }
 }
 
