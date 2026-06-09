@@ -9,6 +9,7 @@ import Foundation
 import Combine
 import FirebaseAuth
 
+// Menangani validasi form serta status kepemilikan sesi akun user untuk membatasi atau mengizinkan akses masuk aplikasi
 @MainActor
 class AuthViewModel: ObservableObject {
     @Published var emailInput: String = ""
@@ -18,10 +19,12 @@ class AuthViewModel: ObservableObject {
     @Published var showError: Bool = false
     @Published var errorMessage: String = ""
     
+    // Menyediakan email user aktif saat ini untuk ditampilkan pada komponen view.
     var currentUserEmail: String {
         FirebaseManager.shared.getCurrentUserEmail() ?? "Email tidak ditemukan"
     }
     
+    // Memberikan representasi nama panggilan terbaik, dan mengutamakan nama kustom atau memotong teks email, agar sapaan pada dasbor terasa personal
     var currentUsername: String {
         if let name = FirebaseManager.shared.getCurrentDisplayName(), !name.isEmpty {
             return name
@@ -29,6 +32,7 @@ class AuthViewModel: ObservableObject {
         return currentUserEmail.components(separatedBy: "@").first ?? "User"
     }
     
+    // Mengirimkan permintaan verifikasi kredensial akun pengguna ke Firebase agar pengguna terdaftar dapat beralih masuk ke dalam fitur utama aplikasi
     func onLoginClick() {
         guard !emailInput.isEmpty, !passwordInput.isEmpty else {
             self.errorMessage = "Email dan Password tidak boleh kosong."
@@ -47,6 +51,7 @@ class AuthViewModel: ObservableObject {
         }
     }
     
+    // Mendaftarkan entitas kredensial baru ke database server agar pengguna mendapatkan hak kepemilikan data profil pribadi
     func onRegisterClick() {
         guard !emailInput.isEmpty, !passwordInput.isEmpty, !usernameInput.isEmpty else {
             self.errorMessage = "Semua kolom harus diisi."
@@ -65,6 +70,7 @@ class AuthViewModel: ObservableObject {
         }
     }
     
+    // Memutuskan token sesi aktif user dan mengosongkan sisa teks formulir lokal untuk mencegah kebocoran privasi akun saat keluar
     func logout() {
         do {
             try FirebaseManager.shared.logout()
@@ -77,6 +83,7 @@ class AuthViewModel: ObservableObject {
         }
     }
     
+    // Memeriksa keberadaan unique ID user lokal yang masih aktif di background agar user dapat langsung masuk otomatis tanpa perlu melewati form login lagi
     func checkExistingSession() {
         if FirebaseManager.shared.getCurrentUserId() != nil {
             self.isAuthenticated = true

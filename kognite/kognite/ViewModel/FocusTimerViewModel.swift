@@ -43,6 +43,7 @@ enum AnimationChoice: String, CaseIterable {
     }
 }
 
+// Mengatur jalannya timer sesi Pomodoro, transisi otomatis antar-mode fokus/istirahat, serta visualisasi animasi pada view
 @MainActor
 class FocusTimerViewModel: ObservableObject {
     @Published var focusMinutes: Int
@@ -57,6 +58,7 @@ class FocusTimerViewModel: ObservableObject {
     @Published var pomodoroCount: Int = 0
     private var activeTimer: Timer?
 
+    // Memuat konfigurasi batas waktu custom milik pengguna dari sesi penyimpanan lokal agar pengalaman fokus tetap personal sejak awal aplikasi dibuka
     init() {
         let userId = FirebaseManager.shared.getCurrentUserId() ?? "default_user"
         let defaults = UserDefaults.standard
@@ -68,6 +70,7 @@ class FocusTimerViewModel: ObservableObject {
         self.timeRemaining = self.focusMinutes * 60
     }
     
+    // Memulai atau menjeda hitungan timer berdasarkan interaksi button oleh user di tampilan view
     func toggleTimer() {
         isPlaying.toggle()
         if isPlaying {
@@ -91,6 +94,7 @@ class FocusTimerViewModel: ObservableObject {
         activeTimer = nil
     }
 
+    // Memperbarui sisa waktu setiap detik secara berkala dan memicu perubahan sesi berikutnya saat waktu habis
     func tick() {
         if isPlaying && timeRemaining > 0 {
             timeRemaining -= 1
@@ -103,12 +107,14 @@ class FocusTimerViewModel: ObservableObject {
         }
     }
     
+    // Mengembalikan durasi ke batas awal waktu penuh pada mode yang aktif saat ini untuk memberikan opsi bagi user untuk mengulang sesinya
     func resetTimer() {
         isPlaying = false
         stopTimer()
         timeRemaining = getTotalTimeForCurrentMode()
     }
     
+    // Mengalihkan user ke istirahat panjang setelah menyelesaikan empat target fokus untuk mencegah kejenuhan mental
     func nextMode() {
         switch currentMode {
         case .focus:
@@ -124,6 +130,7 @@ class FocusTimerViewModel: ObservableObject {
         resetTimer()
     }
     
+    // Memperbarui standar batas waktu kustom ke memori jangka pendek aplikasi untuk menyinkronkan seluruh visualisasi pengukur durasi.
     func applySettings(focus: Int, short: Int, long: Int) {
         self.focusMinutes = focus
         self.shortBreakMinutes = short
@@ -146,6 +153,7 @@ class FocusTimerViewModel: ObservableObject {
         }
     }
     
+    // Mengautentikasi ulang password user melalui sistem Firebase sebelum mengizinkan eksekusi tindakan berisiko tinggi
     func verifyPassword(password: String, completion: @escaping (Bool) -> Void) {
         Swift.Task {
             do {
@@ -157,12 +165,14 @@ class FocusTimerViewModel: ObservableObject {
         }
     }
     
+    // Mengonversi angka detik ke format text agar mudah dibaca oleh user pada view
     var timeString: String {
         let minutes = timeRemaining / 60
         let seconds = timeRemaining % 60
         return String(format: "%02d:%02d", minutes, seconds)
     }
     
+    // Menghitung rasio sisa waktu terhadap total waktu berjalan untuk merender persentase lingkaran
     var progress: CGFloat {
         let totalTime = getTotalTimeForCurrentMode()
         return totalTime > 0 ? CGFloat(timeRemaining) / CGFloat(totalTime) : 0

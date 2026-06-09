@@ -9,6 +9,7 @@ import Foundation
 import FirebaseFirestore
 import FirebaseAuth
 
+// Menjadi pusat kendali tunggal untuk mengelola seluruh autentikasi Firebase dan operasi berbasis data Firestore
 class FirebaseManager {
     static let shared = FirebaseManager()
     
@@ -16,35 +17,40 @@ class FirebaseManager {
     private let auth = Auth.auth()
     
     private init() {}
-    
-    // MARK: - Auth
-    
+
+    // Memberikan akses masuk ke aplikasi bagi user yang telah terdaftar
     func login(email: String, pass: String) async throws {
         try await auth.signIn(withEmail: email, password: pass)
     }
     
+    // Mendaftarkan akun baru sekaligus menginisialisasi dokumen profil awal pengguna di database
     func register(username: String, email: String, pass: String) async throws {
         let result = try await auth.createUser(withEmail: email, password: pass)
         let newUser = User(id: result.user.uid, username: username, email: email, currentStreak: 0)
         try db.collection("users").document(result.user.uid).setData(from: newUser)
     }
     
+    // Menutup sesi aktif demi menjaga keamanan akun pengguna saat keluar dari aplikasi
     func logout() throws {
         try auth.signOut()
     }
     
+    // Menyediakan email pengguna aktif untuk keperluan verifikasi identitas atau view di sisi client
     func getCurrentUserEmail() -> String? {
         return auth.currentUser?.email
     }
     
+    // Mengambil nama profil pengguna untuk keperluan view
     func getCurrentDisplayName() -> String? {
         return auth.currentUser?.displayName
     }
     
+    // Menyediakan unique ID user aktif sebagai kunci relasi utama dokumen antar-koleksi di Firestore
     func getCurrentUserId() -> String? {
         return auth.currentUser?.uid
     }
     
+    // Memastikan keamanan tambahan sebelum menjalankan tindakan sensitif dengan memvalidasi ulang identitas pengguna
     func reauthenticateUser(password: String) async throws {
         guard let user = auth.currentUser, let email = user.email else {
             throw NSError(domain: "Auth", code: -1, userInfo: [NSLocalizedDescriptionKey: "Sesi pengguna tidak valid."])
@@ -54,29 +60,27 @@ class FirebaseManager {
         try await user.reauthenticate(with: credential)
     }
     
-    // MARK: - Users & Stats
-    
+    // Mengambil data metrik performa user untuk mengevaluasi pencapaian target harian mereka
     func fetchUserStats(userId: String) async throws -> (streak: Int, totalTasks: Int, lastActiveDate: String?) {
         let snapshot = try await db.collection("users").document(userId).getDocument()
         guard let data = snapshot.data() else { return (0, 0, nil) }
         
         let streak = data["currentStreak"] as? Int ?? 0
         let totalTasks = data["totalCompletedTasks"] as? Int ?? 0
-        
-        // Mengambil data langsung dari Firebase tanpa memerlukan struct User
         let lastActiveDate = data["lastActiveDate"] as? String
         
         return (streak, totalTasks, lastActiveDate)
     }
     
-    // TAMBAHAN: Fungsi baru untuk menyimpan streak dan tanggal hari ini
+    // Memperbarui status retensi harian pengguna agar perhitungan streak tetap akurat
     func updateUserStreakAndDate(userId: String, newStreak: Int, dateStr: String) async throws {
         try await db.collection("users").document(userId).updateData([
             "currentStreak": newStreak,
-            "lastActiveDate": dateStr // Firebase otomatis membuat kolom ini di DB!
+            "lastActiveDate": dateStr
         ])
     }
     
+    // Memuat data profil lengkap user untuk di convert menjadi objek model User
     func fetchUser(userId: String) async throws -> User? {
         let snapshot = try await db.collection("users").document(userId).getDocument()
         return try snapshot.data(as: User.self)
@@ -135,14 +139,14 @@ class FirebaseManager {
     func deleteActivity(id: String) async throws {
         try await db.collection("activities").document(id).delete()
     }
-    
-    // MARK: - Rewards Management
-    
+     
+    // Mengambil daftar penghargaan yang berhak diakses atau diklaim oleh pengguna berdasarkan riwayat performa mereka.
     func fetchRewards(userId: String) async throws -> [Reward] {
         let snapshot = try await db.collection("rewards").whereField("userId", isEqualTo: userId).getDocuments()
         return snapshot.documents.compactMap { try? $0.data(as: Reward.self) }
     }
     
+    // Menyimpan rekam jejak status klaim *reward* terbaru pengguna agar pencatatan di database tetap sinkron.
     func saveReward(_ reward: Reward, userId: String) throws {
         guard let id = reward.id else { return }
         try db.collection("rewards").document(id).setData(from: reward)
