@@ -7,11 +7,14 @@
 
 import SwiftUI
 
+// Menampilkan daftar lengkap aktivitas rutinitas pengguna beserta opsi edit dan hapus untuk mengelola jadwal harian secara penuh
 struct ManageActivityScreen: View {
     @ObservedObject var viewModel: ActivityListViewModel
     
+    // State lokal untuk menyimpan referensi aktivitas yang akan diedit melalui sheet
     @State private var activityToEdit: ScheduleActivity?
     
+    // State lokal untuk menahan referensi aktivitas yang akan dihapus sampai konfirmasi diberikan
     @State private var showingDeleteAlert = false
     @State private var activityToDelete: ScheduleActivity?
 
@@ -19,6 +22,7 @@ struct ManageActivityScreen: View {
         ZStack {
             Color(red: 0.96, green: 0.96, blue: 0.96).edgesIgnoringSafeArea(.all)
             
+            // Menampilkan tampilan kosong dengan instruksi jika pengguna belum memiliki aktivitas sama sekali
             if viewModel.activities.isEmpty {
                 VStack(spacing: 16) {
                     Image(systemName: "tray.fill")
@@ -30,6 +34,7 @@ struct ManageActivityScreen: View {
                         .font(.subheadline).foregroundColor(.gray).multilineTextAlignment(.center).padding(.horizontal, 40)
                 }
             } else {
+                // Menampilkan daftar seluruh aktivitas yang sudah tersusun kronologis beserta tombol edit dan hapus di setiap baris
                 List {
                     ForEach(viewModel.activities) { activity in
                         HStack {
@@ -79,9 +84,11 @@ struct ManageActivityScreen: View {
         }
         .navigationTitle("Manage Activities")
         .navigationBarTitleDisplayMode(.inline)
+        // Membuka sheet edit aktivitas saat pengguna memilih ikon pensil pada salah satu baris aktivitas
         .sheet(item: $activityToEdit) { activity in
             EditActivitySheet(viewModel: viewModel, activity: activity)
         }
+        // Alert konfirmasi penghapusan untuk mencegah pengguna menghapus aktivitas secara tidak sengaja
         .alert("Konfirmasi Hapus", isPresented: $showingDeleteAlert) {
             Button("Batal", role: .cancel) {
                 activityToDelete = nil
@@ -98,6 +105,7 @@ struct ManageActivityScreen: View {
     }
 }
 
+// Menyediakan form edit waktu dan deskripsi aktivitas yang sudah ada, dengan validasi bentrok jadwal sebelum perubahan disimpan
 struct EditActivitySheet: View {
     @Environment(\.presentationMode) var presentationMode
     @ObservedObject var viewModel: ActivityListViewModel
@@ -107,8 +115,10 @@ struct EditActivitySheet: View {
     @State private var desc: String
     @State private var startTime: Date
     @State private var endTime: Date
+    // State untuk menyimpan pesan error validasi waktu yang ditampilkan langsung di dalam form
     @State private var errorMessage: String?
     
+    // Menginisialisasi state form dengan data aktivitas yang sudah ada agar pengguna bisa melihat nilai sebelumnya saat membuka sheet edit
     init(viewModel: ActivityListViewModel, activity: ScheduleActivity) {
         self.viewModel = viewModel
         self.activity = activity
@@ -132,6 +142,7 @@ struct EditActivitySheet: View {
                     TextField("Description (Optional)", text: $desc)
                 }
                 
+                // Menampilkan pesan error validasi waktu secara inline jika jadwal yang baru bertabrakan dengan aktivitas lain
                 if let errorMessage = errorMessage {
                     Section {
                         Text(errorMessage)
@@ -152,6 +163,7 @@ struct EditActivitySheet: View {
         }
     }
     
+    // Memvalidasi waktu yang diubah terhadap jadwal aktivitas lain sebelum menyimpan perubahan dan menutup sheet
     private func saveActivity() {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm"

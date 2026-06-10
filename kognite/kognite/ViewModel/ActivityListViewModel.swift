@@ -8,6 +8,7 @@
 import Foundation
 import Combine
 
+// Mengelola daftar aktivitas rutinitas harian pengguna beserta logika validasi waktu untuk mencegah terjadinya bentrok jadwal
 @MainActor
 class ActivityListViewModel: ObservableObject {
     @Published var activities: [ScheduleActivity] = []
@@ -21,10 +22,12 @@ class ActivityListViewModel: ObservableObject {
 
     private var scheduleId: String
 
+    // Mengikat identitas pengguna aktif sebagai kunci relasi data agar seluruh operasi aktivitas terhubung ke akun yang benar sejak awal
     init() {
         self.scheduleId = FirebaseManager.shared.getCurrentUserId() ?? "default_user"
     }
 
+    // Menarik seluruh data aktivitas milik pengguna dari Firestore dan mengurutkannya berdasarkan jam mulai agar tampilan jadwal tersusun kronologis
     func loadActivities() {
         Swift.Task {
             do {
@@ -36,6 +39,7 @@ class ActivityListViewModel: ObservableObject {
         }
     }
 
+    // Mencari aktivitas berikutnya yang belum berakhir berdasarkan waktu saat ini untuk ditampilkan sebagai informasi jadwal terdekat di dasbor
     func getNextActivity() -> ScheduleActivity? {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm"
@@ -47,6 +51,7 @@ class ActivityListViewModel: ObservableObject {
             .first
     }
 
+    // Memetakan nama ikon SF Symbols ke label teks yang ramah pengguna agar nama aktivitas dapat ditampilkan dengan tepat di seluruh komponen view
     func getActivityName(icon: String) -> String {
         switch icon {
         case "sun.max.fill":       return "Wake up"
@@ -58,6 +63,7 @@ class ActivityListViewModel: ObservableObject {
         }
     }
 
+    // Menambahkan entri aktivitas baru ke daftar lokal secara optimistis dan menyimpannya ke database, lalu memuat ulang data jika operasi penyimpanan gagal
     func addActivity(icon: String, title: String, start: String, end: String, desc: String) {
         let newId = UUID().uuidString
         let newActivity = ScheduleActivity(
@@ -78,6 +84,7 @@ class ActivityListViewModel: ObservableObject {
         }
     }
 
+    // Memperbarui waktu dan deskripsi aktivitas yang sudah ada secara lokal dan menyinkronkannya ke Firestore, dengan urutan kronologis yang dipertahankan
     func updateActivity(_ activity: ScheduleActivity, start: String, end: String, desc: String) {
         var updated = activity
         updated.startTime = start
@@ -98,6 +105,7 @@ class ActivityListViewModel: ObservableObject {
         }
     }
 
+    // Menghapus aktivitas dari daftar lokal secara langsung dan mengirimkan permintaan penghapusan ke database di background
     func deleteActivity(id: String) {
         self.activities.removeAll(where: { $0.id == id })
         
@@ -110,7 +118,7 @@ class ActivityListViewModel: ObservableObject {
         }
     }
 
-
+    // Memvalidasi rentang waktu aktivitas baru terhadap seluruh aktivitas yang sudah ada untuk memastikan tidak ada jadwal yang saling bertabrakan
     func validateActivityTime(start: String, end: String, excludeId: String? = nil) -> (Bool, String?) {
         let startMin = timeToMinutes(start)
         let endMin = timeToMinutes(end)
@@ -130,6 +138,7 @@ class ActivityListViewModel: ObservableObject {
         return (true, nil)
     }
 
+    // Mengonversi string waktu format "HH:mm" ke total menit agar perbandingan rentang waktu antar-aktivitas dapat dilakukan secara numerik
     private func timeToMinutes(_ time: String) -> Int {
         let parts = time.split(separator: ":").compactMap { Int($0) }
         guard parts.count == 2 else { return 0 }

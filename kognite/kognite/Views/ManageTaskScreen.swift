@@ -7,30 +7,37 @@
 
 import SwiftUI
 
+// Mendefinisikan jenis aksi yang sedang menunggu verifikasi password agar satu alur autentikasi dapat melayani baik penghapusan maupun pengeditan tugas
 enum TaskAction {
     case delete
     case edit
 }
 
+// Menampilkan daftar tugas aktif dan selesai secara terpisah, dengan perlindungan Parental Lock untuk aksi sensitif seperti edit dan hapus
 struct ManageTaskScreen: View {
     @ObservedObject var viewModel: DashboardViewModel
 
+    // State lokal untuk mengontrol visibilitas popup tambah tugas beserta isian datanya
     @State private var showingAddTask = false
     @State private var newTaskTitle = ""
     @State private var newTaskDesc = ""
     @State private var newTaskDeadline = Date()
 
+    // State lokal untuk menahan referensi tugas yang menunggu konfirmasi penyelesaian
     @State private var showCompletionWarning = false
     @State private var taskToComplete: kognite.Task?
 
+    // State lokal untuk alur verifikasi password Parental Lock sebelum aksi sensitif dieksekusi
     @State private var showPasswordPrompt = false
     @State private var enteredPassword = ""
     @State private var showAuthError = false
     @State private var authErrorMessage = ""
     
+    // State lokal untuk menyimpan referensi tugas yang sedang diproses beserta jenis aksinya
     @State private var taskToModify: kognite.Task?
     @State private var pendingAction: TaskAction = .delete
 
+    // State lokal untuk mengontrol visibilitas popup edit tugas beserta isian datanya
     @State private var showingEditTask = false
     @State private var editTaskTitle = ""
     @State private var editTaskDesc = ""
@@ -50,6 +57,7 @@ struct ManageTaskScreen: View {
                     .padding(.bottom, 80)
                 }
 
+                // Floating action button di pojok kanan bawah untuk membuka popup tambah tugas baru
                 VStack {
                     Spacer()
                     HStack {
@@ -71,8 +79,10 @@ struct ManageTaskScreen: View {
                     }
                 }
             }
+            // Menerapkan efek blur pada konten di belakang saat popup tambah atau edit tugas sedang terbuka
             .blur(radius: showingAddTask || showingEditTask ? 5 : 0)
             
+            // Overlay gelap semi-transparan yang menutup popup saat pengguna mengetuk area di luar form
             if showingAddTask || showingEditTask {
                 Color.black.opacity(0.3)
                     .edgesIgnoringSafeArea(.all)
@@ -89,6 +99,7 @@ struct ManageTaskScreen: View {
         .navigationTitle("Manage Tasks")
         .navigationBarTitleDisplayMode(.inline)
         
+        // Alert konfirmasi sebelum menandai tugas sebagai selesai untuk mencegah penyelesaian yang tidak disengaja
         .alert("Konfirmasi Penyelesaian", isPresented: $showCompletionWarning) {
             Button("Batal", role: .cancel) { taskToComplete = nil }
             Button("Yakin") {
@@ -101,6 +112,7 @@ struct ManageTaskScreen: View {
             Text("Apakah anda yakin sudah menyelesaikan tugas ini?")
         }
         
+        // Alert Parental Lock yang meminta password akun sebelum aksi edit atau hapus dieksekusi
         .alert("Parental Lock", isPresented: $showPasswordPrompt) {
             SecureField("Masukkan Password Akun", text: $enteredPassword)
             Button("Batal", role: .cancel) {
@@ -114,6 +126,7 @@ struct ManageTaskScreen: View {
             Text("Masukkan password akun Anda untuk melanjutkan aksi ini.")
         }
         
+        // Alert yang menampilkan pesan kegagalan verifikasi jika password yang dimasukkan salah
         .alert("Verifikasi Gagal", isPresented: $showAuthError) {
             Button("OK", role: .cancel) { }
         } message: {
@@ -121,6 +134,7 @@ struct ManageTaskScreen: View {
         }
     }
 
+    // Menampilkan bagian daftar tugas yang belum selesai, atau pesan kosong jika semua tugas sudah diselesaikan
     private var incompleteSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Incomplete Tasks")
@@ -140,6 +154,7 @@ struct ManageTaskScreen: View {
         }
     }
 
+    // Menampilkan bagian daftar tugas yang sudah selesai hanya jika ada setidaknya satu tugas yang berhasil diselesaikan
     private var completedSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             let completedTasks = viewModel.tasks.filter { $0.isCompleted }
@@ -155,6 +170,7 @@ struct ManageTaskScreen: View {
         }
     }
 
+    // Merender satu baris tugas dengan tampilan visual yang berbeda antara tugas aktif dan selesai, beserta tombol aksi yang relevan untuk setiap statusnya
     private func taskRow(task: kognite.Task) -> some View {
         HStack {
             Rectangle()
@@ -226,6 +242,7 @@ struct ManageTaskScreen: View {
         .shadow(color: Color.black.opacity(0.05), radius: 5, y: 2)
     }
 
+    // Mengeksekusi aksi yang tertunda (hapus atau edit) setelah verifikasi password berhasil, atau menampilkan pesan error jika autentikasi gagal
     private func verifyPasswordAndExecute() {
         viewModel.verifyPassword(password: enteredPassword) { success, message in
             self.enteredPassword = ""
@@ -259,6 +276,7 @@ struct ManageTaskScreen: View {
         }
     }
     
+    // Mengisi state form edit dengan data tugas yang dipilih agar pengguna melihat nilai sebelumnya saat popup terbuka
     private func prepareEditSheet() {
         guard let task = taskToModify else { return }
         editTaskTitle = task.title
@@ -273,6 +291,7 @@ struct ManageTaskScreen: View {
         }
     }
     
+    // Popup form tambah tugas baru yang muncul di tengah layar dengan overlay blur, berisi field judul, deskripsi, dan deadline
     private var addTaskPopUp: some View {
         ZStack {
             
@@ -302,6 +321,7 @@ struct ManageTaskScreen: View {
                         Text("Cancel").bold().frame(maxWidth: .infinity).padding().background(Color.gray.opacity(0.15)).foregroundColor(.gray).cornerRadius(12)
                     }
                     
+                    // Tombol Add dinonaktifkan selama judul masih kosong untuk mencegah penyimpanan tugas tanpa nama
                     Button(action: {
                         let formatter = DateFormatter()
                         formatter.dateFormat = "dd MMM yyyy, HH:mm"
@@ -326,6 +346,7 @@ struct ManageTaskScreen: View {
         }
     }
     
+    // Popup form edit tugas yang muncul di tengah layar dengan overlay blur, menampilkan data tugas yang ada dan memerlukan verifikasi password sebelum perubahan disimpan
     private var editTaskPopUp: some View {
         ZStack {
             
@@ -355,6 +376,7 @@ struct ManageTaskScreen: View {
                         Text("Cancel").bold().frame(maxWidth: .infinity).padding().background(Color.gray.opacity(0.15)).foregroundColor(.gray).cornerRadius(12)
                     }
                     
+                    // Tombol Save memicu Parental Lock sebelum perubahan benar-benar diterapkan ke data
                     Button(action: {
                         pendingAction = .edit
                         showPasswordPrompt = true
