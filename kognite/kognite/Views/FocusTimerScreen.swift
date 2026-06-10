@@ -13,27 +13,23 @@ enum PasswordAction {
     case saveSettings
 }
 
+// Menampilkan halaman timer dengan animasi pada timernya
 struct FocusTimerScreen: View {
     @StateObject private var viewModel = FocusTimerViewModel()
     
-    // States untuk Navigasi & Modals
     @State private var navigateToPattern = false
     @State private var showSettings = false
     @State private var showAnimationPicker = false
     
-    // States untuk Keamanan (Parental Lock)
     @State private var showPasswordPrompt = false
     @State private var enteredPassword = ""
     @State private var showAuthError = false
     @State private var authErrorMessage = ""
     @State private var pendingAction: PasswordAction = .skipTimer
     
-    // States untuk Form Settings
     @State private var tempFocus = 25
     @State private var tempShort = 5
     @State private var tempLong = 15
-    
-    // ❌ HAPUS: let timer = Timer.publish(...)
     
     var body: some View {
         ZStack {
@@ -49,7 +45,6 @@ struct FocusTimerScreen: View {
                     
                     Spacer()
                     
-                    // Timer Circle
                     ZStack {
                         Circle()
                             .fill(Color.black.opacity(0.08))
@@ -70,7 +65,15 @@ struct FocusTimerScreen: View {
                             if let lottieName = viewModel.selectedAnimation.lottieFileName {
                                 LottieView(animationName: lottieName, isPlaying: viewModel.isPlaying)
                                     .frame(width: 150, height: 150)
-                                    .scaleEffect(getScale(for: viewModel.selectedAnimation))
+                                    .scaleEffect({
+                                        switch viewModel.selectedAnimation {
+                                        case .sloth:   return 0.45
+                                        case .bear:    return 0.2
+                                        case .avocado: return 0.5
+                                        case .panda:   return 0.25
+                                        case .cat:     return 0.85
+                                        }
+                                    }())
                                     .id(viewModel.selectedAnimation.rawValue)
                             }
                             
@@ -152,7 +155,6 @@ struct FocusTimerScreen: View {
                     }
                     .padding(.top, 20)
                     
-                    // Bottom Stats Card
                     HStack(spacing: 30) {
                         VStack {
                             Text("Focus").font(.caption).foregroundColor(viewModel.currentMode == .focus ? .black : .gray)
@@ -175,7 +177,6 @@ struct FocusTimerScreen: View {
                     
                 }
                 .background(Color(red: 0.96, green: 0.96, blue: 0.96).edgesIgnoringSafeArea(.all))
-                // HAPUS .onReceive(timer) karena sekarang ViewModel yang mengaturnya sendiri
                 
                 .onChange(of: viewModel.currentMode) { oldValue, newValue in
                     if newValue == .focus {
@@ -203,15 +204,155 @@ struct FocusTimerScreen: View {
             }
             .blur(radius: showSettings || showAnimationPicker ? 5 : 0)
             
-            if showSettings { settingsPopUp }
-            if showAnimationPicker { animationPickerPopUp }
+            if showSettings {
+                ZStack {
+                    Color.black.opacity(0.4).edgesIgnoringSafeArea(.all).onTapGesture {
+                        withAnimation(.easeInOut(duration: 0.2)) { showSettings = false }
+                    }
+                    
+                    VStack(spacing: 25) {
+                        Text("Timer Settings").font(.title2).bold()
+                        
+                        VStack(spacing: 15) {
+                            HStack {
+                                Text("Focus Time").font(.headline).foregroundColor(Color(red: 0.35, green: 0.65, blue: 0.45))
+                                Spacer()
+                                HStack(spacing: 15) {
+                                    Button(action: { if tempFocus > 1 { tempFocus -= 1 } }) {
+                                        Image(systemName: "minus.circle.fill").font(.title2).foregroundColor(Color(red: 0.35, green: 0.65, blue: 0.45).opacity(tempFocus > 1 ? 1.0 : 0.3))
+                                    }
+                                    Text("\(tempFocus)m").font(.headline).frame(width: 45)
+                                    Button(action: { if tempFocus < 120 { tempFocus += 1 } }) {
+                                        Image(systemName: "plus.circle.fill").font(.title2).foregroundColor(Color(red: 0.35, green: 0.65, blue: 0.45).opacity(tempFocus < 120 ? 1.0 : 0.3))
+                                    }
+                                }
+                            }.padding(.vertical, 5)
+                            
+                            HStack {
+                                Text("Short Break").font(.headline).foregroundColor(.orange)
+                                Spacer()
+                                HStack(spacing: 15) {
+                                    Button(action: { if tempShort > 1 { tempShort -= 1 } }) {
+                                        Image(systemName: "minus.circle.fill").font(.title2).foregroundColor(Color.orange.opacity(tempShort > 1 ? 1.0 : 0.3))
+                                    }
+                                    Text("\(tempShort)m").font(.headline).frame(width: 45)
+                                    Button(action: { if tempShort < 30 { tempShort += 1 } }) {
+                                        Image(systemName: "plus.circle.fill").font(.title2).foregroundColor(Color.orange.opacity(tempShort < 30 ? 1.0 : 0.3))
+                                    }
+                                }
+                            }.padding(.vertical, 5)
+                            
+                            HStack {
+                                Text("Long Break").font(.headline).foregroundColor(.blue)
+                                Spacer()
+                                HStack(spacing: 15) {
+                                    Button(action: { if tempLong > 1 { tempLong -= 1 } }) {
+                                        Image(systemName: "minus.circle.fill").font(.title2).foregroundColor(Color.blue.opacity(tempLong > 1 ? 1.0 : 0.3))
+                                    }
+                                    Text("\(tempLong)m").font(.headline).frame(width: 45)
+                                    Button(action: { if tempLong < 60 { tempLong += 1 } }) {
+                                        Image(systemName: "plus.circle.fill").font(.title2).foregroundColor(Color.blue.opacity(tempLong < 60 ? 1.0 : 0.3))
+                                    }
+                                }
+                            }.padding(.vertical, 5)
+                        }
+                        
+                        HStack(spacing: 15) {
+                            Button(action: {
+                                withAnimation(.easeInOut(duration: 0.2)) { showSettings = false }
+                            }) {
+                                Text("Cancel").bold().frame(maxWidth: .infinity).padding().background(Color.gray.opacity(0.15)).foregroundColor(.gray).cornerRadius(12)
+                            }
+                            
+                            Button(action: {
+                                pendingAction = .saveSettings
+                                showPasswordPrompt = true
+                            }) {
+                                Text("Save").bold().frame(maxWidth: .infinity).padding().background(Color(red: 0.35, green: 0.65, blue: 0.45)).foregroundColor(.white).cornerRadius(12)
+                            }
+                        }
+                        .padding(.top, 10)
+                    }
+                    .padding(25).background(Color.white).cornerRadius(24).shadow(radius: 20).padding(.horizontal, 30)
+                }
+            }
+            if showAnimationPicker {
+                ZStack {
+                    Color.black.opacity(0.4).edgesIgnoringSafeArea(.all).onTapGesture {
+                        withAnimation(.easeInOut(duration: 0.2)) { showAnimationPicker = false }
+                    }
+                    
+                    VStack(spacing: 20) {
+                        Text("Choose Animation").font(.title2).bold()
+                        
+                        ScrollView(showsIndicators: false) {
+                            LazyVStack(spacing: 12) {
+                                ForEach(AnimationChoice.allCases, id: \.self) { choice in
+                                    Button(action: {
+                                        viewModel.selectedAnimation = choice
+                                        withAnimation(.easeInOut(duration: 0.2)) { showAnimationPicker = false }
+                                    }) {
+                                        HStack(spacing: 15) {
+                                            if let lottieName = choice.lottieFileName {
+                                                LottieView(animationName: lottieName, isPlaying: true)
+                                                    .frame(width: 50, height: 50)
+                                                    .scaleEffect({
+                                                        switch choice {
+                                                        case .sloth:   return 0.45 * 0.3
+                                                        case .bear:    return 0.2 * 0.3
+                                                        case .avocado: return 0.5 * 0.3
+                                                        case .panda:   return 0.25 * 0.3
+                                                        case .cat:     return 0.85 * 0.3
+                                                        }
+                                                    }())
+                                                    .allowsHitTesting(false)
+                                            }
+                                            
+                                            Text(choice.rawValue.capitalized)
+                                                .font(.headline)
+                                                .foregroundColor(viewModel.selectedAnimation == choice ? .white : .black)
+                                            
+                                            Spacer()
+                                            
+                                            if viewModel.selectedAnimation == choice {
+                                                Image(systemName: "checkmark").font(.headline).foregroundColor(.white)
+                                            }
+                                        }
+                                        .padding(.horizontal, 15).padding(.vertical, 8).frame(maxWidth: .infinity)
+                                        .background(viewModel.selectedAnimation == choice ? Color(red: 0.35, green: 0.65, blue: 0.45) : Color.gray.opacity(0.08))
+                                        .cornerRadius(16)
+                                    }
+                                }
+                            }
+                        }
+                        .frame(maxHeight: 400)
+                    }
+                    .padding(25).background(Color.white).cornerRadius(24).shadow(radius: 20).padding(.horizontal, 30)
+                }
+            }
         }
         
         .alert("Parental Lock", isPresented: $showPasswordPrompt) {
             SecureField("Enter Account Password", text: $enteredPassword)
             Button("Cancel", role: .cancel) { enteredPassword = "" }
             Button("Confirm") {
-                verifyPasswordAndExecute()
+                viewModel.verifyPassword(password: enteredPassword) { success in
+                    self.enteredPassword = ""
+                    
+                    if success {
+                        withAnimation {
+                            if self.pendingAction == .skipTimer {
+                                self.viewModel.nextMode()
+                            } else if self.pendingAction == .saveSettings {
+                                self.viewModel.applySettings(focus: self.tempFocus, short: self.tempShort, long: self.tempLong)
+                                self.showSettings = false
+                            }
+                        }
+                    } else {
+                        self.authErrorMessage = "Incorrect password. Please try again."
+                        self.showAuthError = true
+                    }
+                }
             }
         } message: {
             Text("Enter your account password to proceed.")
@@ -221,146 +362,6 @@ struct FocusTimerScreen: View {
             Button("OK", role: .cancel) { }
         } message: {
             Text(authErrorMessage)
-        }
-    }
-
-    private func verifyPasswordAndExecute() {
-        viewModel.verifyPassword(password: enteredPassword) { success in
-            self.enteredPassword = ""
-            
-            if success {
-                withAnimation {
-                    if self.pendingAction == .skipTimer {
-                        self.viewModel.nextMode()
-                    } else if self.pendingAction == .saveSettings {
-                        self.viewModel.applySettings(focus: self.tempFocus, short: self.tempShort, long: self.tempLong)
-                        self.showSettings = false
-                    }
-                }
-            } else {
-                self.authErrorMessage = "Incorrect password. Please try again."
-                self.showAuthError = true
-            }
-        }
-    }
-    
-    // MARK: - Custom Pop-Ups
-    private var settingsPopUp: some View {
-        ZStack {
-            Color.black.opacity(0.4).edgesIgnoringSafeArea(.all).onTapGesture {
-                withAnimation(.easeInOut(duration: 0.2)) { showSettings = false }
-            }
-            
-            VStack(spacing: 25) {
-                Text("Timer Settings").font(.title2).bold()
-                
-                VStack(spacing: 15) {
-                    customStepper(title: "Focus Time", value: $tempFocus, range: 1...120, color: Color(red: 0.35, green: 0.65, blue: 0.45))
-                    customStepper(title: "Short Break", value: $tempShort, range: 1...30, color: .orange)
-                    customStepper(title: "Long Break", value: $tempLong, range: 1...60, color: .blue)
-                }
-                
-                HStack(spacing: 15) {
-                    Button(action: {
-                        withAnimation(.easeInOut(duration: 0.2)) { showSettings = false }
-                    }) {
-                        Text("Cancel").bold().frame(maxWidth: .infinity).padding().background(Color.gray.opacity(0.15)).foregroundColor(.gray).cornerRadius(12)
-                    }
-                    
-                    // MINTA PASSWORD SAAT MENYIMPAN PENGATURAN
-                    Button(action: {
-                        pendingAction = .saveSettings
-                        showPasswordPrompt = true
-                        // Jangan tutup popup di sini, biarkan fungsi `verifyPasswordAndExecute` yang menutupnya
-                    }) {
-                        Text("Save").bold().frame(maxWidth: .infinity).padding().background(Color(red: 0.35, green: 0.65, blue: 0.45)).foregroundColor(.white).cornerRadius(12)
-                    }
-                }
-                .padding(.top, 10)
-            }
-            .padding(25).background(Color.white).cornerRadius(24).shadow(radius: 20).padding(.horizontal, 30)
-        }
-    }
-    
-    private var animationPickerPopUp: some View {
-        ZStack {
-            Color.black.opacity(0.4).edgesIgnoringSafeArea(.all).onTapGesture {
-                withAnimation(.easeInOut(duration: 0.2)) { showAnimationPicker = false }
-            }
-            
-            VStack(spacing: 20) {
-                Text("Choose Animation").font(.title2).bold()
-                
-                ScrollView(showsIndicators: false) {
-                    LazyVStack(spacing: 12) {
-                        ForEach(AnimationChoice.allCases, id: \.self) { choice in
-                            Button(action: {
-                                viewModel.selectedAnimation = choice
-                                withAnimation(.easeInOut(duration: 0.2)) { showAnimationPicker = false }
-                            }) {
-                                HStack(spacing: 15) {
-                                    if let lottieName = choice.lottieFileName {
-                                        LottieView(animationName: lottieName, isPlaying: true)
-                                            .frame(width: 50, height: 50)
-                                            .scaleEffect(getScale(for: choice) * 0.3)
-                                            .allowsHitTesting(false)
-                                    }
-                                    
-                                    Text(choice.rawValue.capitalized)
-                                        .font(.headline)
-                                        .foregroundColor(viewModel.selectedAnimation == choice ? .white : .black)
-                                    
-                                    Spacer()
-                                    
-                                    if viewModel.selectedAnimation == choice {
-                                        Image(systemName: "checkmark").font(.headline).foregroundColor(.white)
-                                    }
-                                }
-                                .padding(.horizontal, 15).padding(.vertical, 8).frame(maxWidth: .infinity)
-                                .background(viewModel.selectedAnimation == choice ? Color(red: 0.35, green: 0.65, blue: 0.45) : Color.gray.opacity(0.08))
-                                .cornerRadius(16)
-                            }
-                        }
-                    }
-                }
-                .frame(maxHeight: 400)
-            }
-            .padding(25).background(Color.white).cornerRadius(24).shadow(radius: 20).padding(.horizontal, 30)
-        }
-    }
-    
-    // MARK: - Helper Functions
-    
-    private func customStepper(title: String, value: Binding<Int>, range: ClosedRange<Int>, color: Color) -> some View {
-        HStack {
-            Text(title).font(.headline).foregroundColor(color)
-            Spacer()
-            HStack(spacing: 15) {
-                Button(action: {
-                    if value.wrappedValue > range.lowerBound { value.wrappedValue -= 1 }
-                }) {
-                    Image(systemName: "minus.circle.fill").font(.title2).foregroundColor(color.opacity(value.wrappedValue > range.lowerBound ? 1.0 : 0.3))
-                }
-                
-                Text("\(value.wrappedValue)m").font(.headline).frame(width: 45)
-                
-                Button(action: {
-                    if value.wrappedValue < range.upperBound { value.wrappedValue += 1 }
-                }) {
-                    Image(systemName: "plus.circle.fill").font(.title2).foregroundColor(color.opacity(value.wrappedValue < range.upperBound ? 1.0 : 0.3))
-                }
-            }
-        }
-        .padding(.vertical, 5)
-    }
-    
-    private func getScale(for animation: AnimationChoice) -> CGFloat {
-        switch animation {
-        case .sloth:   return 0.45
-        case .bear:    return 0.2
-        case .avocado: return 0.5
-        case .panda:   return 0.25
-        case .cat:     return 0.85
         }
     }
 }

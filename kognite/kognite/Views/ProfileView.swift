@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+// Menyediakan UI bagi user untuk meninjau identitas akun mereka saat ini serta memberikan akses yang aman untuk mengakhiri sesi aktif
 struct ProfileView: View {
     @ObservedObject var authViewModel: AuthViewModel
     @State private var showLogoutWarning = false
