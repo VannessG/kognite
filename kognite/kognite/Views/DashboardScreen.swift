@@ -7,10 +7,12 @@
 
 import SwiftUI
 
+// Menampilkan ringkasan produktivitas harian pengguna, jadwal aktivitas terdekat, dan daftar tugas aktif dalam satu halaman utama yang terpadu
 struct DashboardScreen: View {
     @StateObject var viewModel = DashboardViewModel()
     @StateObject var activityVM = ActivityListViewModel()
     
+    // State lokal untuk mengontrol form tambah aktivitas dari shortcut ikon di dasbor
     @State private var showingAddActivity = false
     @State private var selectedIcon = ""
     @State private var selectedTitle = ""
@@ -18,9 +20,11 @@ struct DashboardScreen: View {
     @State private var activityStart = Date()
     @State private var activityEnd = Date()
     
+    // State lokal untuk menampilkan pesan error validasi waktu pada form tambah aktivitas
     @State private var showErrorAlert = false
     @State private var errorMessage = ""
     
+    // State lokal untuk menahan referensi tugas yang akan dikonfirmasi sebelum ditandai selesai
     @State private var showTaskCompletionAlert = false
     @State private var taskToComplete: kognite.Task?
     
@@ -29,6 +33,7 @@ struct DashboardScreen: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 25) {
                     
+                    // Bagian sapaan personal yang menampilkan nama pengguna aktif di bagian atas dasbor
                     VStack(alignment: .leading, spacing: 5) {
                         Text("Welcome Back,")
                             .font(.title2)
@@ -40,6 +45,7 @@ struct DashboardScreen: View {
                     .padding(.horizontal)
                     .padding(.top, 10)
                     
+                    // Bagian progress bar yang merepresentasikan secara visual persentase tugas harian yang telah diselesaikan
                     VStack(alignment: .leading, spacing: 8) {
                         let currentProgress = viewModel.calculateProgress()
                         let progressPercentage = Int(currentProgress * 100)
@@ -74,6 +80,7 @@ struct DashboardScreen: View {
                     }
                     .padding(.horizontal)
                     
+                    // Kartu jadwal berikutnya yang menampilkan aktivitas terdekat yang belum berakhir, atau pesan selesai jika tidak ada aktivitas tersisa
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
                             Image(systemName: activityVM.getNextActivity()?.iconName ?? "calendar")
@@ -117,6 +124,7 @@ struct DashboardScreen: View {
                     .cornerRadius(20)
                     .padding(.horizontal)
                     
+                    // Bagian shortcut ikon aktivitas yang memungkinkan pengguna menambah rutinitas harian dengan cepat tanpa harus masuk ke halaman manajemen
                     VStack {
                         HStack {
                             Text("Activities")
@@ -142,6 +150,7 @@ struct DashboardScreen: View {
                         }
                     }
                     
+                    // Bagian daftar tugas aktif yang belum selesai beserta tombol penyelesaian dan tautan ke halaman manajemen tugas lengkap
                     VStack(alignment: .leading) {
                         HStack {
                             Text("Upcoming Deadlines")
@@ -201,6 +210,7 @@ struct DashboardScreen: View {
             .background(Color(red: 0.96, green: 0.96, blue: 0.96).edgesIgnoringSafeArea(.all))
             .toolbar(.hidden, for: .navigationBar)
             
+            // Alert konfirmasi sebelum menandai tugas sebagai selesai untuk mencegah penyelesaian yang tidak disengaja
             .alert(isPresented: $showTaskCompletionAlert) {
                 Alert(
                     title: Text("Konfirmasi"),
@@ -214,6 +224,7 @@ struct DashboardScreen: View {
                 )
             }
             
+            // Sheet tambah aktivitas yang muncul dari shortcut ikon dasbor dengan validasi waktu sebelum data disimpan
             .sheet(isPresented: $showingAddActivity) {
                 VStack(spacing: 20) {
                     Text("Add Activity").font(.title2).fontWeight(.bold).frame(maxWidth: .infinity, alignment: .leading)
@@ -258,12 +269,14 @@ struct DashboardScreen: View {
                 }
             }
         }
+        // Memuat data tugas dan aktivitas secara bersamaan saat halaman pertama kali muncul
         .onAppear {
             viewModel.loadDashboardData()
             activityVM.loadActivities()
         }
     }
     
+    // Menyiapkan state form tambah aktivitas dengan ikon dan judul yang dipilih, lalu menampilkan sheet input kepada pengguna
     func openAddActivityForm(icon: String, title: String) {
         selectedIcon = icon
         selectedTitle = title
@@ -274,6 +287,7 @@ struct DashboardScreen: View {
     }
 }
 
+// Menampilkan tombol ikon aktivitas berbentuk lingkaran berwarna dengan label teks di bawahnya untuk digunakan sebagai shortcut pada baris aktivitas dasbor
 struct ActivityIcon: View {
     var icon: String; var title: String; var color: Color
     var body: some View {
