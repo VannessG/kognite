@@ -10,7 +10,6 @@ import SwiftUI
 // Menampilkan halaman register untuk mendaftarkan akun baru (belum memiliki akun)
 struct RegisterScreen: View {
     @ObservedObject var viewModel: AuthViewModel
-    @Environment(\.presentationMode) var presentationMode
     
     var body: some View {
         VStack(spacing: 30) {

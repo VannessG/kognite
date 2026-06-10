@@ -176,6 +176,7 @@ struct FocusTimerScreen: View {
                     .padding()
                     
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color(red: 0.96, green: 0.96, blue: 0.96).edgesIgnoringSafeArea(.all))
                 
                 .onChange(of: viewModel.currentMode) { oldValue, newValue in

@@ -14,14 +14,12 @@ struct ContentView: View {
     var body: some View {
         Group {
             if authViewModel.isAuthenticated {
-                // Mengarahkan ke TabView Utama ketika berhasil Login
                 MainTabView(authViewModel: authViewModel)
             } else {
                 LoginScreen(viewModel: authViewModel)
             }
         }
         .onAppear {
-            // PERBAIKAN: Menyerahkan tugas cek sesi ke ViewModel
             authViewModel.checkExistingSession()
         }
     }

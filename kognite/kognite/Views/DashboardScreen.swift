@@ -77,7 +77,7 @@ struct DashboardScreen: View {
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
                             Image(systemName: activityVM.getNextActivity()?.iconName ?? "calendar")
-                            Text("Next on Schedule")
+                            Text("Schedule")
                                 .font(.subheadline)
                         }
                         .foregroundColor(.white.opacity(0.8))
